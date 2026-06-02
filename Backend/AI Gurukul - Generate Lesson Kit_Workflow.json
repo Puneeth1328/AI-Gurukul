@@ -1,0 +1,183 @@
+{
+  "name": "AI Gurukul - Generate Lesson Kit",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-lesson-gurukul",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "476e913e-3b03-412d-b114-0b4e70a80775",
+      "name": "Webhook",
+      "webhookId": "43a28d2c-4b19-46c1-b17a-7d2ef8ee8c05"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"success\",\n  \"lesson_id\": \"{{ $('Invoke Save Lesson').item.json.lesson_id }}\",\n  \"message\": \"Full educational kit generated, compiled, and saved safely via Supabase Edge Function!\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1216,
+        0
+      ],
+      "id": "90139a06-986e-4537-93fb-f38d71219571",
+      "name": "Send Response"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json.body || $input.first().json;\n\n// Safe fallback unique id generator using timestamp + random integer \n// that bypasses all n8n node sandbox library security policies\nconst fallbackId = 'lesson_' + Date.now() + '_' + Math.floor(Math.random() * 1000);\n\n// Safely map incoming fields or default to a structural string format\nconst lessonId = input.lesson_id || fallbackId;\n\nconst context = {\n  lesson_id:  lessonId,\n  user_id:    input.user_id,\n  subject:    input.subject,\n  grade:      input.grade,\n  topic:      input.topic,\n  duration:   input.duration || '45 minutes',\n  objectives: input.objectives || `Understand ${input.topic}`,\n  language:   input.language || 'English',\n  difficulty: input.difficulty || 'Medium',\n  \n  systemRole: `You are a senior curriculum designer with 20 years of experience creating educational materials for ${input.subject} at ${input.grade} level.`,\n  outputRule: 'CRITICAL OUTPUT RULE: Your entire response must be a single valid JSON object. Start with { and end with }. No markdown fences. No code blocks. No explanation text.',\n  languageInstruction: input.language === 'English' ? 'Write entirely in English.' : `Write entirely in ${input.language}. All content must be in ${input.language}.`,\n  difficultyInstruction: 'Use grade-appropriate vocabulary. Balance theory and application.'\n};\n\nreturn [{ json: context }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        0
+      ],
+      "id": "d6b68398-7ea7-424a-bf8f-2ef678c2efd2",
+      "name": "Build Context"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=__GOOGLE_API_KEY_PLACEHOLDER__",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"{{ $json.outputRule }}\\n\\n{{ $json.systemRole }}\\n\\nCreate a complete, master educational kit for the following class based on these requirements:\\n\\nSUBJECT: {{ $json.subject }}\\nGRADE: {{ $json.grade }}\\nTOPIC: {{ $json.topic }}\\nDURATION: {{ $json.duration }}\\nLEARNING OBJECTIVES: {{ $json.objectives }}\\nOUTPUT LANGUAGE: {{ $json.language }}\\nDIFFICULTY: {{ $json.difficulty }}\\n\\nINSTRUCTIONS:\\n- {{ $json.languageInstruction }}\\n- {{ $json.difficultyInstruction }}\\n- Generate highly specific, practical, real educational material. Do not use placeholders.\\n\\nYOU MUST OUTPUT A SINGLE VALID JSON OBJECT MATCHING THIS EXACT MULTI-PART SCHEMA:\\n{\\n  \\\"lessonPlan\\\": {\\n    \\\"title\\\": \\\"REAL TITLE\\\",\\n    \\\"objectives\\\": [\\\"Objective 1\\\", \\\"Objective 2\\\"],\\n    \\\"warmup\\\": {\\\"activity\\\": \\\"Name\\\", \\\"duration\\\": \\\"5m\\\", \\\"description\\\": \\\"Warmup details...\\\"},\\n    \\\"mainContent\\\": [{\\\"concept\\\": \\\"Concept 1\\\", \\\"explanation\\\": \\\"Details...\\\", \\\"example\\\": \\\"Concrete Example\\\"}],\\n    \\\"activity\\\": {\\\"title\\\": \\\"Activity Title\\\", \\\"duration\\\": \\\"15m\\\", \\\"instructions\\\": \\\"Step 1...\\\"},\\n    \\\"recap\\\": {\\\"keyPoints\\\": [\\\"Point 1\\\"], \\\"checkQuestions\\\": [\\\"Question 1?\\\"]},\\n    \\\"homework\\\": {\\\"assignment\\\": \\\"Task details\\\", \\\"dueDate\\\": \\\"Next class\\\"}\\n  },\\n  \\\"worksheet\\\": {\\n    \\\"title\\\": \\\"Worksheet Title\\\",\\n    \\\"sections\\\": [\\n      {\\\"type\\\": \\\"fill_blanks\\\", \\\"title\\\": \\\"Section A\\\", \\\"questions\\\": [\\\"Sentence with ___ blank.\\\"]},\\n      {\\\"type\\\": \\\"short_answer\\\", \\\"title\\\": \\\"Section B\\\", \\\"questions\\\": [{\\\"question\\\": \\\"Question?\\\", \\\"marks\\\": 2}]}\\n    ]\\n  },\\n  \\\"quiz\\\": {\\n    \\\"title\\\": \\\"Quiz Title\\\",\\n    \\\"totalMarks\\\": 20,\\n    \\\"duration\\\": \\\"20 minutes\\\",\\n    \\\"sections\\\": {\\n      \\\"mcq\\\": [{\\\"question\\\": \\\"Question 1?\\\", \\\"options\\\": [\\\"A. Opt\\\", \\\"B. Opt\\\", \\\"C. Opt\\\", \\\"D. Opt\\\"], \\\"correct\\\": \\\"A\\\"}],\\n      \\\"trueFalse\\\": [{\\\"statement\\\": \\\"Statement.\\\", \\\"answer\\\": true}],\\n      \\\"shortAnswer\\\": [{\\\"question\\\": \\\"Question?\\\", \\\"marks\\\": 3}]\\n    }\\n  },\\n  \\\"rubric\\\": {\\n    \\\"title\\\": \\\"Rubric Title\\\",\\n    \\\"totalPoints\\\": 16,\\n    \\\"criteria\\\": [{\\n      \\\"name\\\": \\\"Concept Mastery\\\",\\n      \\\"weight\\\": 25,\\n      \\\"excellent\\\": {\\\"points\\\": 4, \\\"description\\\": \\\"Details\\\"},\\n      \\\"good\\\": {\\\"points\\\": 3, \\\"description\\\": \\\"Details\\\"},\\n      \\\"satisfactory\\\": {\\\"points\\\": 2, \\\"description\\\": \\\"Details\\\"},\\n      \\\"needsWork\\\": {\\\"points\\\": 1, \\\"description\\\": \\\"Details\\\"}\\n    }]\\n  },\\n  \\\"answerKey\\\": {\\n    \\\"title\\\": \\\"Answer Key Title\\\",\\n    \\\"worksheetAnswers\\\": {\\n      \\\"fillBlanks\\\": [\\\"answer\\\"],\\n      \\\"shortAnswers\\\": [{\\\"question\\\": \\\"Q1\\\", \\\"answer\\\": \\\"Model answer\\\"}]\\n    },\\n    \\\"quizAnswers\\\": {\\n      \\\"mcq\\\": [{\\\"q\\\": 1, \\\"answer\\\": \\\"A\\\", \\\"explanation\\\": \\\"Why A\\\"}],\\n      \\\"trueFalse\\\": [{\\\"q\\\": 1, \\\"answer\\\": true, \\\"explanation\\\": \\\"Why True\\\"}],\\n      \\\"shortAnswers\\\": [{\\\"q\\\": 1, \\\"answer\\\": \\\"Model answer\\\"}]\\n    }\\n  }\\n}\"\n        }\n      ]\n    }\n  ],\n  \"generationConfig\": {\n    \"temperature\": 0.4,\n    \"maxOutputTokens\": 8000,\n    \"topP\": 0.8\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        512,
+        0
+      ],
+      "id": "490067b6-9b5f-4d89-9246-04ba931311a5",
+      "name": "Gemini - Generate Full Kit",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsCode": "const geminiResponse = $input.first().json;\nconst context = $('Build Context').first().json;\n\nfunction robustParse(text) {\n  if (!text) throw new Error('Empty input text received.');\n  let t = text.trim();\n  \n  t = t.replace(/^```json\\s*/i, '').replace(/\\s*```$/i, '');\n  t = t.replace(/^```\\s*/i, '').replace(/\\s*```$/i, '');\n  \n  const start = t.indexOf('{');\n  const end   = t.lastIndexOf('}');\n  if (start === -1 || end === -1) throw new Error('Master JSON structure truncated or invalid.');\n  t = t.slice(start, end + 1);\n  \n  // Clean newlines inside string tokens breaking JSON parsing syntax rules\n  t = t.replace(/,\\s*}/g, '}')\n       .replace(/,\\s*]/g, ']')\n       .replace(/\\r?\\n|\\r/g, ' ')\n       .replace(/\\t/g, ' ');\n  \n  return JSON.parse(t);\n}\n\nlet masterKit;\ntry {\n  const rawText = geminiResponse?.candidates?.[0]?.content?.parts?.[0]?.text || '';\n  masterKit = robustParse(rawText);\n} catch(e) {\n  throw new Error('MASTER_KIT_PARSE_FAILED: ' + e.message);\n}\n\nreturn [{\n  json: {\n    lesson_id:  context.lesson_id,\n    user_id:    context.user_id,\n    lessonPlan: masterKit.lessonPlan || {},\n    worksheet:  masterKit.worksheet  || {},\n    quiz:       masterKit.quiz       || {},\n    rubric:     masterKit.rubric     || {},\n    answerKey:  masterKit.answerKey  || {}\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        0
+      ],
+      "id": "f6f3cb36-edbd-46a4-bf11-98c3a881d7c9",
+      "name": "Parse & Assemble Master Kit"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://<SUPABASE_PROJECT_ID>.supabase.co/functions/v1/save-lesson",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+                "value": "Bearer __SUPABASE_SERVICE_ROLE_KEY_PLACEHOLDER__"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"user_id\": \"{{ $('Build Context').item.json.user_id }}\",\n  \"subject\": \"{{ $('Build Context').item.json.subject }}\",\n  \"grade\": \"{{ $('Build Context').item.json.grade }}\",\n  \"topic\": \"{{ $('Build Context').item.json.topic }}\",\n  \"duration\": \"{{ $('Build Context').item.json.duration }}\",\n  \"objectives\": \"{{ $('Build Context').item.json.objectives }}\",\n  \"language\": \"{{ $('Build Context').item.json.language }}\",\n  \"lessonPlan\": {{ JSON.stringify($json.lessonPlan) }},\n  \"worksheet\": {{ JSON.stringify($json.worksheet) }},\n  \"quiz\": {{ JSON.stringify($json.quiz) }},\n  \"rubric\": {{ JSON.stringify($json.rubric) }},\n  \"answerKey\": {{ JSON.stringify($json.answerKey) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        992,
+        0
+      ],
+      "id": "4607c2a7-7bfd-4664-ac6b-363087b6e773",
+      "name": "Invoke Save Lesson"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Build Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Context": {
+      "main": [
+        [
+          {
+            "node": "Gemini - Generate Full Kit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini - Generate Full Kit": {
+      "main": [
+        [
+          {
+            "node": "Parse & Assemble Master Kit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Assemble Master Kit": {
+      "main": [
+        [
+          {
+            "node": "Invoke Save Lesson",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invoke Save Lesson": {
+      "main": [
+        [
+          {
+            "node": "Send Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e6114e66-66ce-4a86-8490-ffe81fc995b9",
+  "meta": {
+    "instanceId": "bfb63ac56e2824de3450eda14f88dce7bdb3637daf6f5cfdae831ba13370ccd9"
+  },
+  "id": "q6iL6LmToqEdLOJO",
+  "tags": []
+}

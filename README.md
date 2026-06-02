@@ -1,0 +1,135 @@
+# AI Gurukul — Intelligent Lesson Kit Generator
+
+**Project Title**: AI Gurukul — Intelligent Lesson Kit Generator
+
+**Product Overview**:
+- **AI Gurukul** is a developer-focused SaaS portfolio project that generates complete, grade-appropriate lesson kits (lesson plans, worksheets, quizzes, rubrics, answer keys) using LLMs plus serverless edge functions and a Supabase backend. It provides curriculum designers and educators with quick, production-ready teaching materials.
+
+**Problem Solved**:
+- Curriculum creation is time-consuming and repetitive. AI Gurukul automates high-quality lesson generation while keeping materials structured and exportable for LMS integration.
+
+**Solution Architecture**:
+- A frontend React app collects inputs (subject, grade, topic, objectives) and calls serverless endpoints that orchestrate LLM calls, parse structured JSON outputs, and persist results into a Supabase Postgres instance. Background workflows (n8n-style JSON in `Backend/`) glue AI calls to Supabase Edge Functions.
+
+```mermaid
+flowchart LR
+  A[Frontend UI] -->|POST /generate| B(Webhook / API)
+  B --> C{Orchestrator / n8n workflow}
+  C --> D[LLM Provider (Gemini/OpenAI)]
+  C --> E[Parse & Validate JSON]
+  E --> F[Supabase Edge Function]
+  F --> G[Postgres (Supabase)]
+  G --> H[Storage + Realtime Channels]
+  H --> I[Frontend: View / Discussion]
+  style D fill:#f9f,stroke:#333,stroke-width:1px
+  style F fill:#bbf,stroke:#333
+```
+
+**Features**:
+- - **Automated lesson generation**: Generate a complete lesson kit in one request 🧠
+- - **Structured outputs**: Outputs are validated JSON objects (lessonPlan, worksheet, quiz, rubric, answerKey) ✅
+- - **Supabase backend**: Persists lessons and enables realtime discussions 💾
+- - **Serverless edge functions**: Fast, secure function endpoints for saving and regenerating content ⚡
+- - **Regeneration tools**: Regenerate specific sections (worksheet, quiz) without overwriting the full lesson 🔁
+- - **Exportable content**: Download or integrate generated kits with LMS systems 📥
+
+**Workflow Explanation**:
+- 1. Educator fills input form in the frontend UI ([Frontend/ai-gurukul-28-main/src/index.tsx](Frontend/ai-gurukul-28-main/src/index.tsx)).
+- 2. Frontend calls an orchestration webhook (the `Backend/` workflow JSONs define these webhook-based flows).
+- 3. Orchestrator calls an LLM (Gemini/OpenAI) to generate a single valid JSON object.
+- 4. The workflow parses, validates, and POSTs the structured JSON to a Supabase Edge Function (see `Frontend/ai-gurukul-28-main/supabase/functions/`).
+- 5. Supabase stores the lesson and triggers real-time updates; users can view and discuss inside the lesson UI.
+
+**Tech Stack**:
+- **Frontend**: React + Vite (see [Frontend/ai-gurukul-28-main/package.json](Frontend/ai-gurukul-28-main/package.json))
+- **Backend/workflows**: n8n-style JSON workflows in `Backend/` that orchestrate AI calls
+- **AI provider**: Google Gemini / OpenAI for content generation
+- **Database/Auth**: Supabase (Edge Functions + Postgres + Realtime)
+- **Integrations**: n8n/webhooks, ngrok (for dev webhooks)
+
+**Installation Steps**:
+- Clone the repo and enter the workspace root.
+
+```bash
+git clone <repo-url>
+cd AI-Gurukul
+```
+
+- Frontend install & run (inside `Frontend/ai-gurukul-28-main`):
+
+```bash
+cd Frontend/ai-gurukul-28-main
+bun install   # or npm install
+bun dev       # or npm run dev
+```
+
+- Supabase & Edge functions: follow Supabase CLI or Dashboard to deploy `/Frontend/ai-gurukul-28-main/supabase/functions`
+- n8n / workflow: import the JSON workflows from `Backend/` into your n8n instance or equivalent orchestrator.
+
+**Environment Variables** (use `.env` files; do NOT commit secrets):
+- Frontend example (`Frontend/ai-gurukul-28-main/.env`):
+
+```
+SUPABASE_PUBLISHABLE_KEY=__SUPABASE_PUBLISHABLE_KEY_PLACEHOLDER__
+SUPABASE_URL=https://<SUPABASE_PROJECT_ID>.supabase.co
+VITE_SUPABASE_PROJECT_ID=__SUPABASE_PROJECT_ID_PLACEHOLDER__
+VITE_SUPABASE_PUBLISHABLE_KEY=__SUPABASE_PUBLISHABLE_KEY_PLACEHOLDER__
+VITE_SUPABASE_URL=https://<SUPABASE_PROJECT_ID>.supabase.co
+VITE_N8N_WEBHOOK_URL=https://your-ngrok-url-or-webhook.local
+```
+
+- Backend / workflow placeholders:
+```
+GOOGLE_API_KEY=__GOOGLE_API_KEY_PLACEHOLDER__
+SUPABASE_SERVICE_ROLE_KEY=__SUPABASE_SERVICE_ROLE_KEY_PLACEHOLDER__
+```
+
+**Screenshots & GIF Demos**:
+- Add screenshots and GIFs to the `Screenshots/` directory.
+- Example references (place files there):
+  - `Screenshots/overview.png`
+  - `Screenshots/demo-flow.gif` (animated GIF demo of the generate flow)
+
+Preview (add files to `Screenshots/` and they'll render here):
+
+![Demo GIF](Screenshots/demo-flow.gif)
+
+### Project Explainer Images
+
+![Project Explainer Image 1](./Project%20explainer%20image1.png)
+
+![Project Explainer Image 2](./Project%20explainer%20image2.png)
+
+**Architecture Diagrams**:
+- See the mermaid diagram above. For a printable PNG, export the mermaid graph with your preferred tool and place it in `Screenshots/architecture.png`.
+
+**Deployment Links**:
+- Frontend (example): https://your-frontend-deploy.example.com
+- Supabase Project (console): https://app.supabase.com/project/<SUPABASE_PROJECT_ID>
+- n8n (orchestrator): https://your-n8n.example.com
+
+(Replace placeholders with your actual deployment URLs once deployed.)
+
+**Future Roadmap**:
+- Add user accounts and multi-tenant support (organization-level content)
+- Add content versioning and audit logs
+- Improve LLM safety pipelines and hallucination detection
+- Add direct LMS export (Canvas, Moodle) and SCORM packaging
+- Add analytics dashboard for lesson usage and student engagement
+
+**Creator Information**:
+- Creator: Your Name — AI / EdTech Engineer
+- GitHub: https://github.com/yourusername
+- Email: your.email@example.com
+
+**License**:
+- MIT License — see LICENSE file for details
+
+---
+
+If you want, I can:
+- Commit this README and sanitize/commit any remaining tracked secrets (I can run `git rm --cached` for files that were previously committed),
+- Add example GIFs/screenshots into `Screenshots/` and wire the README images, or
+- Create a `DEPLOY.md` with step-by-step deployment instructions.
+
+Tell me which of those to do next and I will continue.

@@ -1,0 +1,183 @@
+{
+  "name": "AI Gurukul - Regenerate Section",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "regenerate-section",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "965868aa-f6e8-46b5-990b-4cbefe817cc1",
+      "name": "Webhook",
+      "webhookId": "ad1dc6ae-8fa7-40f3-92b5-4bb4ba391e2e"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=__GOOGLE_API_KEY_PLACEHOLDER__",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": {{ JSON.stringify($json.prompt) }}\n        }\n      ]\n    }\n  ],\n  \"generationConfig\": {\n    \"temperature\": 0.6,\n    \"maxOutputTokens\": 4000\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "398670ca-a078-458d-92ed-42bab79b1dcf",
+      "name": "Gemini - Regenerate",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"success\",\n  \"lesson_id\": \"{{ $('Parse & Update Supabase').item.json.lesson_id }}\",\n  \"section\": \"{{ $('Parse & Update Supabase').item.json.section }}\",\n  \"message\": \"Section regenerated successfully and synced via Lovable Edge Function!\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "d859f7dc-8e94-4d03-824e-a39e4f7383af",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\n\n// Strict validation gates\nif (!body.lesson_id) throw new Error('Missing parameter: lesson_id');\nif (!body.section)   throw new Error('Missing parameter: section'); \n\n// FIXED: Added 'lesson_plan' and 'answerkey' aliases to match all Lovable naming conventions perfectly\nconst tableMap = {\n  lesson:         'lesson_content',\n  lesson_plan:    'lesson_content',\n  worksheet:      'worksheets',\n  quiz:           'quizzes',\n  rubric:         'rubrics',\n  answer_key:     'answer_keys',\n  answerkey:      'answer_keys'\n};\n\n// FIXED: Added matching prompt schema aliases \nconst schemas = {\n  lesson: `{\"title\":\"\",\"objectives\":[],\"warmup\":{\"activity\":\"\",\"duration\":\"\",\"description\":\"\"},\"mainContent\":[{\"concept\":\"\",\"explanation\":\"\",\"example\":\"\"}],\"activity\":{\"title\":\"\",\"duration\":\"\",\"instructions\":\"\"},\"recap\":{\"keyPoints\":[],\"checkQuestions\":[]},\"homework\":{\"assignment\":\"\",\"dueDate\":\"\"}}`,\n  worksheet: `{\"title\":\"\",\"sections\":[{\"type\":\"fill_blanks\",\"title\":\"Section A\",\"questions\":[]},{\"type\":\"short_answer\",\"title\":\"Section B\",\"questions\":[{\"question\":\"\",\"marks\":2}]}]}`,\n  quiz: `{\"title\":\"\",\"totalMarks\":20,\"duration\":\"20 minutes\",\"sections\":{\"mcq\":[{\"question\":\"\",\"options\":[\"A. \",\"B. \",\"C. \",\"D. \"],\"correct\":\"A\"}],\"trueFalse\":[{\"statement\":\"\",\"answer\":true}],\"shortAnswer\":[{\"question\":\"\",\"marks\":3}]}}`,\n  rubric: `{\"title\":\"\",\"totalPoints\":16,\"criteria\":[{\"name\":\"\",\"weight\":25,\"excellent\":{\"points\":4,\"description\":\"\"},\"good\":{\"points\":3,\"description\":\"\"},\"satisfactory\":{\"points\":2,\"description\":\"\"},\"needsWork\":{\"points\":1,\"description\":\"\"}}]}`,\n  answer_key: `{\"title\":\"Answer Key\",\"worksheetAnswers\":{\"fillBlanks\":[],\"shortAnswers\":[]},\"quizAnswers\":{\"mcq\":[],\"trueFalse\":[],\"shortAnswers\":[]}}`\n};\n\n// Map aliases to common structure fallback roots safely\nconst normalizedSection = body.section.toLowerCase().trim();\nconst targetTable = tableMap[normalizedSection];\nconst schemaKey = (normalizedSection === 'lesson_plan') ? 'lesson' : (normalizedSection === 'answerkey' ? 'answer_key' : normalizedSection);\n\nif (!targetTable || !schemas[schemaKey]) {\n  throw new Error(`${body.section} Invalid section identifier`);\n}\n\nconst prompt = `CRITICAL OUTPUT RULE: Return ONLY a raw JSON object. No markdown fences. No code blocks. No explanation text. Start with { and end with }.\n\nYou are an elite curriculum designer. Generate a completely fresh, brand-new replacement version for the educational component: ${body.section.toUpperCase()}.\nDo not repeat identical questions or copy-paste phrasing from previous generations.\n\nCLASS PARAMETERS:\nSUBJECT: ${body.subject || 'Mathematics'}\nGRADE: ${body.grade || 'Grade 8'}\nTOPIC: ${body.topic || 'Trigonometry'}\nLANGUAGE: ${body.language || 'English'}\nDIFFICULTY: ${body.difficulty || 'Medium'}\n\nOUTPUT THIS EXACT JSON STRUCTURE SCHEMA:\n${schemas[schemaKey]}`;\n\nreturn [{\n  json: {\n    lesson_id:  body.lesson_id,\n    user_id:    body.user_id,\n    section:    normalizedSection,\n    table_name: targetTable,\n    prompt:     prompt\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "14670839-1add-48f2-bcad-f6ad436c034e",
+      "name": "Build Regenerate Context"
+    },
+    {
+      "parameters": {
+        "jsCode": "const geminiResponse = $input.first().json;\nconst context = $('Build Regenerate Context').first().json;\n\nfunction robustParse(text) {\n  if (!text) throw new Error('Empty text received from AI.');\n  let t = text.trim();\n  t = t.replace(/^```json\\s*/i, '').replace(/\\s*```$/i, '');\n  t = t.replace(/^```\\s*/i, '').replace(/\\s*```$/i, '');\n\n  const start = t.indexOf('{');\n  const end   = t.lastIndexOf('}');\n  if (start === -1 || end === -1) throw new Error('Invalid JSON structure returned by Gemini.');\n\n  t = t.slice(start, end + 1);\n  // Flatten raw literal line breaks inside strings breaking JSON specs\n  t = t.replace(/\\r?\\n|\\r/g, ' ').replace(/\\t/g, ' ');\n  return JSON.parse(t);\n}\n\nconst rawText = geminiResponse?.candidates?.[0]?.content?.parts?.[0]?.text || '';\nconst freshContent = robustParse(rawText);\n\nreturn [{\n  json: {\n    lesson_id:  context.lesson_id,\n    section:    context.section,\n    table_name: context.table_name,\n    content:    freshContent\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "1e90b4b6-e13f-45ac-a02c-81faf8ad0b70",
+      "name": "Parse & Update Supabase"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://<SUPABASE_PROJECT_ID>.supabase.co/functions/v1/regenerate-section",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer __SUPABASE_SERVICE_ROLE_KEY_PLACEHOLDER__"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"lesson_id\": \"{{ $json.lesson_id }}\",\n  \"section\": \"{{ $json.table_name }}\",\n  \"content\": {{ JSON.stringify($json.content) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        832,
+        0
+      ],
+      "id": "85f408ca-0598-4c02-b2a3-eca9688670e2",
+      "name": "Invoke Save Lesson - Regenerate"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Build Regenerate Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini - Regenerate": {
+      "main": [
+        [
+          {
+            "node": "Parse & Update Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Regenerate Context": {
+      "main": [
+        [
+          {
+            "node": "Gemini - Regenerate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Update Supabase": {
+      "main": [
+        [
+          {
+            "node": "Invoke Save Lesson - Regenerate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invoke Save Lesson - Regenerate": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "5c906313-41bd-43ed-a3a3-c3bdb132b0ec",
+  "meta": {
+    "instanceId": "bfb63ac56e2824de3450eda14f88dce7bdb3637daf6f5cfdae831ba13370ccd9"
+  },
+  "id": "cVmJqudjxoYPr6IJ",
+  "tags": []
+}

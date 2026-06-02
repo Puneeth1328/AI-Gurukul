@@ -1,0 +1,7 @@
+project_id = "__SUPABASE_PROJECT_ID_PLACEHOLDER__"
+
+[functions.save-lesson]
+verify_jwt = false
+
+[functions.regenerate-section]
+verify_jwt = false
