@@ -129,10 +129,3 @@ Preview images:
 - MIT License — see LICENSE file for details
 
 ---
-
-If you want, I can:
-- Commit this README and sanitize/commit any remaining tracked secrets (I can run `git rm --cached` for files that were previously committed),
-- Add example GIFs/screenshots into `Screenshots/` and wire the README images, or
-- Create a `DEPLOY.md` with step-by-step deployment instructions.
-
-Tell me which of those to do next and I will continue.
