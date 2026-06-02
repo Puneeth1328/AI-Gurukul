@@ -96,9 +96,9 @@ Preview (add files to `Screenshots/` and they'll render here):
 
 ### Project Explainer Images
 
-![Project Explainer Image 1](./Project%20explainer%20image1.png)
+![Project Explainer Image 1](images/project-explainer-image1.png)
 
-![Project Explainer Image 2](./Project%20explainer%20image2.png)
+![Project Explainer Image 2](images/project-explainer-image2.png)
 
 **Architecture Diagrams**:
 - See the mermaid diagram above. For a printable PNG, export the mermaid graph with your preferred tool and place it in `Screenshots/architecture.png`.
