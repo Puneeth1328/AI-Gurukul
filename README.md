@@ -13,16 +13,14 @@
 
 ```mermaid
 flowchart LR
-  A[Frontend UI] -->|POST /generate| B(Webhook / API)
-  B --> C{Orchestrator / n8n workflow}
-  C --> D[LLM Provider (Gemini/OpenAI)]
-  C --> E[Parse & Validate JSON]
+  A[Frontend UI] -->|POST /generate| B[Webhook API]
+  B --> C[Orchestrator / n8n]
+  C --> D[LLM Provider]
+  C --> E[Parse JSON]
   E --> F[Supabase Edge Function]
-  F --> G[Postgres (Supabase)]
-  G --> H[Storage + Realtime Channels]
-  H --> I[Frontend: View / Discussion]
-  style D fill:#f9f,stroke:#333,stroke-width:1px
-  style F fill:#bbf,stroke:#333
+  F --> G[Supabase Postgres]
+  G --> H[Realtime Channels]
+  H --> I[Frontend View]
 ```
 
 **Features**:
@@ -87,12 +85,17 @@ SUPABASE_SERVICE_ROLE_KEY=__SUPABASE_SERVICE_ROLE_KEY_PLACEHOLDER__
 **Screenshots & GIF Demos**:
 - Add screenshots and GIFs to the `Screenshots/` directory.
 - Example references (place files there):
-  - `Screenshots/overview.png`
-  - `Screenshots/demo-flow.gif` (animated GIF demo of the generate flow)
+  - `Screenshots/AI_Gurukul - Homepage1.png`
+  - `Screenshots/AI_Gurukul - Dashboard.png`
+  - `Screenshots/AI_Gurukul - Generate_Lesson.png`
 
-Preview (add files to `Screenshots/` and they'll render here):
+Preview images:
 
-![Demo GIF](Screenshots/demo-flow.gif)
+![Homepage 1](Screenshots/AI_Gurukul%20-%20Homepage1.png)
+
+![Dashboard](Screenshots/AI_Gurukul%20-%20Dashboard.png)
+
+![Generate Lesson](Screenshots/AI_Gurukul%20-%20Generate_Lesson.png)
 
 ### Project Explainer Images
 
