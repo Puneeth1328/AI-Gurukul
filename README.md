@@ -155,6 +155,6 @@ SUPABASE_SERVICE_ROLE_KEY=__SUPABASE_SERVICE_ROLE_KEY_PLACEHOLDER__
 
 ## 📄 License
 
-- MIT License — see LICENSE file for details
+- see LICENSE file for details
 
 ---
